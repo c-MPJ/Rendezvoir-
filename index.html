@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RendezVoir — Sistema Web de Gestión de Citas y Reservas</title>
+  <!-- Tipografías oficiales: Playfair Display (títulos editoriales) y Plus Jakarta Sans (UI limpia) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Contenedor de notificaciones flotantes (Toasts) -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- =====================================================================
+       VISTA 1: PORTAL DE AUTENTICACIÓN (LOGIN / REGISTRO SEPARADO POR ROLES)
+       RF-01 (Registro negocio), RF-02 (Inicio de sesión diferenciado por rol)
+       ===================================================================== -->
+  <main id="auth-view" class="auth-wrapper">
+    <!-- Panel izquierdo: Identidad visual y propuesta de valor -->
+    <section class="auth-brand-panel">
+      <div class="brand-logo">
+        <span class="logo-mark">RV</span>
+        <span class="logo-text">Rendez<strong>Voir</strong></span>
+      </div>
+
+      <div class="brand-hero">
+        <span class="pill-badge">PLATAFORMA DE AGENDAMIENTO INTELIGENTE</span>
+        <h1 id="auth-hero-title">Lleva tu negocio al siguiente nivel.</h1>
+        <p id="auth-hero-desc">
+          Elimina las dobles reservas, organiza tu agenda semanal en tiempo real y permite que tus clientes reserven las 24 horas sin fricciones.
+        </p>
+
+        <div class="brand-highlights">
+          <div class="highlight-item">
+            <span class="highlight-dot"></span>
+            <div>
+              <strong>Control de Roles Estricto</strong>
+              <span>Acceso independiente y cifrado para Dueños de Negocio y Clientes.</span>
+            </div>
+          </div>
+          <div class="highlight-item">
+            <span class="highlight-dot"></span>
+            <div>
+              <strong>Bloqueo Automático en Tiempo Real</strong>
+              <span>Cero cruces de horarios al instante en que se confirma una cita.</span>
+            </div>
+          </div>
+          <div class="highlight-item">
+            <span class="highlight-dot"></span>
+            <div>
+              <strong>24 Horas de Prueba Gratuita</strong>
+              <span>Configura tu establecimiento en menos de 10 minutos sin tarjeta.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="brand-footer">
+        <span>RendezVoir &copy; 2026 — Proyecto ADSO SENA</span>
+      </footer>
+    </section>
+
+    <!-- Panel derecho: Formularios de Acceso y Registro -->
+    <section class="auth-form-panel">
+      <div class="auth-card">
+        <!-- Selector estricto de Rol -->
+        <div class="role-switcher" role="tablist" aria-label="Seleccionar rol de acceso">
+          <button type="button" id="role-tab-admin" class="role-tab active" data-role="admin" role="tab" aria-selected="true">
+            Soy Negocio (Administrador)
+          </button>
+          <button type="button" id="role-tab-client" class="role-tab" data-role="cliente" role="tab" aria-selected="false">
+            Soy Cliente (Reservar)
+          </button>
+        </div>
+
+        <!-- Selector de Acción: Iniciar Sesión o Crear Cuenta -->
+        <div class="auth-mode-header">
+          <h2 id="auth-form-heading">Ingresar al Panel Administrativo</h2>
+          <p id="auth-form-subheading">Gestiona tu agenda, clientes y servicios en tiempo real.</p>
+        </div>
+
+        <div id="auth-alert" class="alert-box hidden" role="alert"></div>
+
+        <!-- FORMULARIO: INICIO DE SESIÓN (COMPARTIDO PERO VALIDADO ESTRICTAMENTE POR ROL) -->
+        <form id="login-form" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="login-email" id="login-email-label">CORREO ELECTRÓNICO DEL ADMINISTRADOR</label>
+            <input type="email" id="login-email" placeholder="admin@negocio.com" required autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="login-password">CONTRASEÑA</label>
+              <button type="button" id="btn-show-recovery" class="link-btn">¿La olvidaste?</button>
+            </div>
+            <input type="password" id="login-password" placeholder="••••••••••••" required autocomplete="current-password" />
+          </div>
+
+          <button type="submit" id="btn-login-submit" class="btn btn-dark btn-full">
+            Entrar al panel administrativo
+          </button>
+
+          <p class="auth-switch-text">
+            <span id="switch-to-register-label">¿Nuevo en RendezVoir?</span>
+            <button type="button" id="btn-go-register" class="link-btn accent">Crear cuenta ahora</button>
+          </p>
+        </form>
+
+        <!-- FORMULARIO: REGISTRO DE NEGOCIO (RF-01) -->
+        <form id="register-admin-form" class="auth-form hidden" novalidate>
+          <div class="form-group">
+            <label for="reg-biz-name">NOMBRE DEL NEGOCIO *</label>
+            <input type="text" id="reg-biz-name" placeholder="Ej. Estética Lumière" required />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-biz-address">DIRECCIÓN FÍSICA *</label>
+            <input type="text" id="reg-biz-address" placeholder="Calle Principal 123, Ciudad" required />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="reg-biz-phone">TELÉFONO DE CONTACTO *</label>
+              <input type="tel" id="reg-biz-phone" placeholder="+57 300 000 0000" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-biz-email">CORREO ELECTRÓNICO *</label>
+              <input type="email" id="reg-biz-email" placeholder="contacto@negocio.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-biz-password">CONTRASEÑA (MÍN. 6 CARACTERES) *</label>
+            <input type="password" id="reg-biz-password" placeholder="Crea una clave segura" minlength="6" required />
+          </div>
+
+          <div class="trial-banner">
+            <strong>PROBAR GRATIS POR 24 HORAS</strong>
+            <span>Sin tarjeta de crédito. Acceso completo inmediato a todas las funciones.</span>
+          </div>
+
+          <button type="submit" class="btn btn-accent btn-full">
+            Comenzar prueba gratis de 24h
+          </button>
+
+          <p class="auth-switch-text">
+            ¿Ya tienes una cuenta de negocio?
+            <button type="button" class="link-btn accent btn-go-login">Inicia sesión aquí</button>
+          </p>
+        </form>
+
+        <!-- FORMULARIO: REGISTRO DE CLIENTE (RF-02) -->
+        <form id="register-client-form" class="auth-form hidden" novalidate>
+          <div class="form-group">
+            <label for="reg-cli-name">NOMBRE COMPLETO *</label>
+            <input type="text" id="reg-cli-name" placeholder="Ej. Carmen García" required />
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="reg-cli-phone">TELÉFONO DE CONTACTO *</label>
+              <input type="tel" id="reg-cli-phone" placeholder="+57 312 345 6789" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-cli-email">CORREO ELECTRÓNICO *</label>
+              <input type="email" id="reg-cli-email" placeholder="cliente@correo.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="reg-cli-password">CONTRASEÑA (MÍN. 6 CARACTERES) *</label>
+            <input type="password" id="reg-cli-password" placeholder="Crea tu contraseña de acceso" minlength="6" required />
+          </div>
+
+          <button type="submit" class="btn btn-dark btn-full">
+            Crear cuenta de Cliente
+          </button>
+
+          <p class="auth-switch-text">
+            ¿Ya tienes cuenta de cliente?
+            <button type="button" class="link-btn accent btn-go-login">Inicia sesión aquí</button>
+          </p>
+        </form>
+
+        <!-- FORMULARIO: RECUPERACIÓN DE CONTRASEÑA -->
+        <form id="recovery-form" class="auth-form hidden" novalidate>
+          <div class="form-group">
+            <label for="rec-email">CORREO ELECTRÓNICO REGISTRADO</label>
+            <input type="email" id="rec-email" placeholder="usuario@correo.com" required />
+          </div>
+          <div class="form-group">
+            <label for="rec-new-pass">NUEVA CONTRASEÑA (RESTABLECIMIENTO INMEDIATO)</label>
+            <input type="password" id="rec-new-pass" placeholder="Mínimo 6 caracteres" minlength="6" required />
+          </div>
+          <button type="submit" class="btn btn-dark btn-full">Restablecer Contraseña</button>
+          <p class="auth-switch-text">
+            <button type="button" class="link-btn accent btn-go-login">Volver al inicio de sesión</button>
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- =====================================================================
+       VISTA 2: PANEL ADMINISTRATIVO EXCLUSIVO PARA DUEÑO DE NEGOCIO
+       ===================================================================== -->
+  <div id="admin-app" class="app-shell hidden">
+    <!-- Barra de navegación superior institucional -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand-logo small">
+          <span class="logo-mark">RV</span>
+          <span class="logo-text">Rendez<strong>Voir</strong></span>
+        </div>
+        <nav class="main-nav" aria-label="Navegación administrativa">
+          <button type="button" class="nav-item active" data-section="admin-dashboard">Panel Principal</button>
+          <button type="button" class="nav-item" data-section="admin-calendar">Calendario Semanal</button>
+          <button type="button" class="nav-item" data-section="admin-history">Historial de Citas</button>
+          <button type="button" class="nav-item" data-section="admin-services">Servicios</button>
+          <button type="button" class="nav-item" data-section="admin-schedule">Horarios</button>
+          <button type="button" class="nav-item" data-section="admin-clients">Clientes</button>
+          <button type="button" class="nav-item" data-section="admin-profile">Perfil</button>
+          <button type="button" class="nav-item" data-section="admin-notifications">
+            Notificaciones <span id="notif-badge" class="badge-count">0</span>
+          </button>
+          <button type="button" class="nav-item" data-section="admin-activation">Activación</button>
+          <button type="button" class="nav-item" data-section="admin-security">Seguridad</button>
+        </nav>
+      </div>
+
+      <div class="topbar-right">
+        <div class="biz-chip">
+          <span class="status-dot online" id="topbar-status-dot"></span>
+          <span id="topbar-biz-name">Mi Negocio</span>
+        </div>
+        <button type="button" id="btn-admin-logout" class="btn btn-outline btn-sm">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <!-- Banner de estado de tiempo de prueba / activación -->
+    <div id="admin-trial-strip" class="trial-strip">
+      <div class="trial-strip-info">
+        <span class="pulse-indicator"></span>
+        <span>TIEMPO ACTIVO RESTANTE: <strong id="trial-countdown">24h 00m 00s</strong></span>
+      </div>
+      <button type="button" class="btn btn-accent btn-xs" data-goto="admin-activation">Añadir tiempo ($2.000 COP/día)</button>
+    </div>
+
+    <!-- Contenido principal dinámico del Administrador -->
+    <main class="container-main">
+      <!-- BLOQUEO POR EXPIRACIÓN DE PRUEBA (Acceso de Prueba Suspendido) -->
+      <section id="admin-suspended" class="admin-section hidden">
+        <div class="suspended-card">
+          <span class="badge-danger">CONGELADO • PERÍODO DE PRUEBA EXPIRADO</span>
+          <h1>Tu acceso administrativo ha sido suspendido.</h1>
+          <p>
+            Para reanudar tus operaciones de inmediato y desbloquear tu portal público de reservas, realiza la renovación por Nequi ($2.000 COP por cada 24 horas). Tu información e historial se mantienen a salvo.
+          </p>
+          <div class="suspended-actions">
+            <button type="button" class="btn btn-accent" data-goto="admin-activation">Ir a Activación por Nequi</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.1: PANEL PRINCIPAL (DASHBOARD) -->
+      <section id="admin-dashboard" class="admin-section">
+        <div class="page-header">
+          <div>
+            <h1 id="dash-greeting">¡Buen día!</h1>
+            <p class="subtitle">Esto es lo que ocurre hoy en tu negocio.</p>
+          </div>
+          <div class="header-actions">
+            <button type="button" class="btn btn-outline" id="btn-copy-public-link-dash">Copiar Enlace Público</button>
+            <button type="button" class="btn btn-accent" id="btn-open-manual-booking">+ Nueva Reserva de Cliente</button>
+          </div>
+        </div>
+
+        <!-- KPIs principales -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">CITAS PROGRAMADAS HOY</span>
+            <div class="kpi-value" id="kpi-today-count">0</div>
+            <span class="kpi-meta" id="kpi-today-sub">0 pendientes de confirmar</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">SERVICIOS COMPLETADOS</span>
+            <div class="kpi-value" id="kpi-completed-count">0</div>
+            <span class="kpi-meta" id="kpi-total-sub">De un total de 0 reservas</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">INGRESO ESTIMADO HOY</span>
+            <div class="kpi-value" id="kpi-est-income">$0</div>
+            <span class="kpi-meta" id="kpi-closed-income">Cerrado: $0</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">CLIENTES REGISTRADOS</span>
+            <div class="kpi-value" id="kpi-clients-count">0</div>
+            <span class="kpi-meta">Base de datos activa</span>
+          </div>
+        </div>
+
+        <!-- Dos columnas: Próximas Citas y Accesos Rápidos -->
+        <div class="dashboard-split">
+          <div class="card">
+            <div class="card-header">
+              <h2>Próximas Citas</h2>
+              <button type="button" class="link-btn accent" data-goto="admin-history">Ver historial completo</button>
+            </div>
+            <div id="dash-upcoming-list" class="appointment-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Accesos Rápidos</h2>
+            </div>
+            <div class="quick-actions-grid">
+              <button type="button" class="quick-btn" data-goto="admin-services">
+                <strong>Gestionar Servicios</strong>
+                <span>Crear, editar precios y duración</span>
+              </button>
+              <button type="button" class="quick-btn" data-goto="admin-schedule">
+                <strong>Configurar Horarios</strong>
+                <span>Definir jornada semanal y descansos</span>
+              </button>
+              <button type="button" class="quick-btn" data-goto="admin-calendar">
+                <strong>Calendario Semanal</strong>
+                <span>Vista visual de ocupación</span>
+              </button>
+              <button type="button" class="quick-btn" data-goto="admin-clients">
+                <strong>Ver Ficha de Clientes</strong>
+                <span>Historial y notas técnicas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.2: CALENDARIO SEMANAL (RF-05) -->
+      <section id="admin-calendar" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Calendario Semanal</h1>
+            <p class="subtitle">Visualiza todas las citas agendadas con su estado en tiempo real.</p>
+          </div>
+          <div class="calendar-legend">
+            <span class="legend-item"><i class="dot confirmed"></i> Confirmadas</span>
+            <span class="legend-item"><i class="dot pending"></i> Pendientes</span>
+            <span class="legend-item"><i class="dot completed"></i> Atendidas</span>
+            <span class="legend-item"><i class="dot cancelled"></i> Canceladas</span>
+          </div>
+        </div>
+
+        <div class="calendar-controls">
+          <button type="button" id="btn-cal-prev" class="btn btn-outline btn-sm">&larr; Semana anterior</button>
+          <strong id="cal-week-label">Semana Actual</strong>
+          <button type="button" id="btn-cal-next" class="btn btn-outline btn-sm">Semana siguiente &rarr;</button>
+        </div>
+
+        <div id="weekly-calendar-grid" class="weekly-grid"></div>
+      </section>
+
+      <!-- SECCIÓN 2.3: HISTORIAL DE CITAS (RF-05, RF-06) -->
+      <section id="admin-history" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Historial de Citas</h1>
+            <p class="subtitle">Visualiza, filtra y gestiona el registro completo de reservas de tu negocio.</p>
+          </div>
+          <button type="button" class="btn btn-accent" id="btn-open-manual-booking-2">+ Nueva Reserva</button>
+        </div>
+
+        <div class="card">
+          <div class="filter-bar">
+            <input type="search" id="filter-search" placeholder="Buscar cliente o servicio..." />
+            <select id="filter-service">
+              <option value="ALL">Todos los servicios</option>
+            </select>
+            <select id="filter-status">
+              <option value="ALL">Cualquier estado</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Atendida">Atendida</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+            <button type="button" id="btn-clear-filters" class="btn btn-outline btn-sm">Limpiar Filtros</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>CLIENTE</th>
+                  <th>SERVICIO</th>
+                  <th>FECHA</th>
+                  <th>HORA</th>
+                  <th>PRECIO</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.4: GESTIÓN DE SERVICIOS (RF-04) -->
+      <section id="admin-services" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Gestión de Servicios</h1>
+            <p class="subtitle">Define las prestaciones que tus clientes podrán reservar de manera autónoma.</p>
+          </div>
+          <button type="button" id="btn-new-service" class="btn btn-accent">+ Crear Nuevo Servicio</button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>NOMBRE DEL SERVICIO</th>
+                  <th>DURACIÓN</th>
+                  <th>PRECIO</th>
+                  <th>ESTADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody id="services-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.5: HORARIOS DE ATENCIÓN (RF-03) -->
+      <section id="admin-schedule" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Horarios de Atención</h1>
+            <p class="subtitle">Establece la jornada semanal del negocio y define tus días de descanso absoluto.</p>
+          </div>
+        </div>
+
+        <form id="schedule-form" class="schedule-layout">
+          <div class="card">
+            <h2>Jornada Regular Semanal</h2>
+            <div id="schedule-days-container" class="schedule-days-list"></div>
+          </div>
+
+          <div class="card">
+            <h2>Frecuencia de Citas</h2>
+            <p class="subtitle">Define los bloques de tiempo mínimo en los que se dividirá tu calendario.</p>
+            <div class="radio-stack">
+              <label class="radio-card">
+                <input type="radio" name="slot-interval" value="30" />
+                <span>Cada 30 minutos</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="slot-interval" value="45" />
+                <span>Cada 45 minutos</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="slot-interval" value="60" checked />
+                <span>Cada 1 hora (Recomendado)</span>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-dark btn-full mt-4">Guardar Configuración</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- SECCIÓN 2.6: BASE DE DATOS DE CLIENTES -->
+      <section id="admin-clients" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Base de Datos de Clientes</h1>
+            <p class="subtitle">Fichas, historial de visitas, notas técnicas y preferencias de tu negocio.</p>
+          </div>
+          <button type="button" id="btn-new-client-modal" class="btn btn-accent">+ Nuevo Cliente</button>
+        </div>
+
+        <div class="card">
+          <div class="filter-bar">
+            <input type="search" id="client-search-input" placeholder="Buscar cliente por nombre, correo o teléfono..." />
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>CLIENTE</th>
+                  <th>EMAIL</th>
+                  <th>TELÉFONO</th>
+                  <th>RESERVAS</th>
+                  <th>FACTURADO</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody id="clients-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.7: PERFIL DEL NEGOCIO Y ENLACE PÚBLICO (RF-07) -->
+      <section id="admin-profile" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Perfil del Negocio</h1>
+            <p class="subtitle">Administra los datos públicos de tu establecimiento y obtén tu link de agendamiento.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-split">
+          <form id="profile-form" class="card">
+            <h2>Información del Establecimiento</h2>
+            <div class="form-group">
+              <label for="prof-name">NOMBRE DEL NEGOCIO</label>
+              <input type="text" id="prof-name" required />
+            </div>
+            <div class="form-group">
+              <label for="prof-phone">TELÉFONO DE CONTACTO</label>
+              <input type="tel" id="prof-phone" required />
+            </div>
+            <div class="form-group">
+              <label for="prof-address">DIRECCIÓN FÍSICA</label>
+              <input type="text" id="prof-address" required />
+            </div>
+            <div class="form-group">
+              <label for="prof-desc">DESCRIPCIÓN DEL NEGOCIO O CONCEPTO</label>
+              <textarea id="prof-desc" rows="3" placeholder="Describe tu negocio y los servicios que ofreces..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-dark">Actualizar Perfil</button>
+          </form>
+
+          <div class="card dark-card">
+            <span class="pill-badge light">TU PORTAL PÚBLICO ACTIVO</span>
+            <h2>Tus clientes reservan de forma directa aquí.</h2>
+            <p>
+              Comparte este enlace único en Instagram, WhatsApp o tu sitio web para recibir citas sin intermediarios.
+            </p>
+            <div class="public-link-box">
+              <code id="public-portal-url">https://rendezvoir.com/mi-negocio</code>
+            </div>
+            <button type="button" id="btn-copy-portal-url" class="btn btn-accent btn-full">Copiar Enlace Público</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.8: CENTRO DE NOTIFICACIONES -->
+      <section id="admin-notifications" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Centro de Notificaciones</h1>
+            <p class="subtitle">Revisa la actividad de tu plataforma de reservas y gestiona alertas del sistema.</p>
+          </div>
+          <button type="button" id="btn-mark-all-read" class="btn btn-outline btn-sm">Marcar todas como leídas</button>
+        </div>
+
+        <div class="card">
+          <div id="notifications-list" class="notif-list"></div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.9: ACTIVACIÓN DE CUENTA POR NEQUI -->
+      <section id="admin-activation" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Activación por Nequi</h1>
+            <p class="subtitle">Añade bloques de 24 horas a tu agenda y mantén tu negocio funcionando en piloto automático.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-split">
+          <form id="activation-form" class="card">
+            <h2>Instrucciones de Pago Inmediato</h2>
+            <ol class="steps-list">
+              <li>Envía exactamente <strong>$2.000 COP</strong> por cada 24 horas de activación que desees agregar.</li>
+              <li>Realiza la transferencia al número de Nequi oficial del sistema: <strong>312 345 6789 (RendezVoir S.A.S)</strong>.</li>
+              <li>Selecciona los días pre-pagados e ingresa el número de referencia del comprobante emitido por Nequi.</li>
+            </ol>
+
+            <div class="form-group">
+              <label>SELECCIONAR DÍAS A PRE-PAGAR (OPCIÓN ACUMULABLE)</label>
+              <div class="plan-pills">
+                <button type="button" class="plan-pill active" data-days="1" data-amount="2000">1 Día ($2k)</button>
+                <button type="button" class="plan-pill" data-days="3" data-amount="6000">3 Días ($6k)</button>
+                <button type="button" class="plan-pill" data-days="7" data-amount="14000">7 Días ($14k)</button>
+                <button type="button" class="plan-pill" data-days="15" data-amount="30000">15 Días ($30k)</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="nequi-ref">NÚMERO DE REFERENCIA DEL PAGO NEQUI *</label>
+              <input type="text" id="nequi-ref" placeholder="Ej: M202611251234" required />
+            </div>
+
+            <button type="submit" class="btn btn-accent btn-full">Validar y Registrar Pago</button>
+          </form>
+
+          <div class="card dark-card">
+            <h2>Resumen de tu Cuenta</h2>
+            <div class="summary-row">
+              <span>Estado actual:</span>
+              <strong id="act-status-text" class="text-success">ACTIVO</strong>
+            </div>
+            <div class="summary-row">
+              <span>Tiempo activo restante:</span>
+              <strong id="act-remaining-text">24 Horas</strong>
+            </div>
+            <div class="summary-row">
+              <span>Tarifa diaria:</span>
+              <strong>$2.000 COP</strong>
+            </div>
+            <hr class="divider-dark" />
+            <p class="small-muted">
+              El saldo se acumula de forma consecutiva e ininterrumpida. Si el tiempo expira, dispones de 24 horas de gracia antes de la purga automática de datos inactivos.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2.10: SEGURIDAD Y ELIMINACIÓN DE CUENTA -->
+      <section id="admin-security" class="admin-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Seguridad de la Cuenta</h1>
+            <p class="subtitle">Administra el acceso a tu cuenta, actualiza tu contraseña y vigila la integridad de tus datos.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-split">
+          <form id="change-password-form" class="card">
+            <h2>Cambiar Contraseña</h2>
+            <div class="form-group">
+              <label for="sec-current-pass">CONTRASEÑA ACTUAL</label>
+              <input type="password" id="sec-current-pass" required />
+            </div>
+            <div class="form-group">
+              <label for="sec-new-pass">NUEVA CONTRASEÑA (MÍN. 6 CARACTERES)</label>
+              <input type="password" id="sec-new-pass" minlength="6" required />
+            </div>
+            <button type="submit" class="btn btn-dark">Actualizar Clave</button>
+          </form>
+
+          <form id="delete-account-form" class="card danger-border">
+            <h2 class="text-danger">Eliminación Definitiva del Negocio</h2>
+            <p class="subtitle">
+              Esta acción desactivará por completo tu cuenta empresarial, borrará tu catálogo de servicios, cancelará citas pendientes y eliminará las fichas de clientes.
+            </p>
+            <div class="form-group">
+              <label for="del-confirm-pass">CONFIRMA ESCRIBIENDO TU CONTRASEÑA ACTUAL</label>
+              <input type="password" id="del-confirm-pass" placeholder="Introduce tu contraseña" required />
+            </div>
+            <button type="submit" class="btn btn-danger">Eliminar Cuenta Definitivamente</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       VISTA 3: PORTAL EXCLUSIVO PARA ROL CLIENTE (RESERVAS EN LÍNEA)
+       RF-07, RF-08, RF-09 (Bloqueo automático), RF-10 (Comprobante visual)
+       ===================================================================== -->
+  <div id="client-app" class="app-shell hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand-logo small">
+          <span class="logo-mark">RV</span>
+          <span class="logo-text">Rendez<strong>Voir</strong></span>
+        </div>
+        <nav class="main-nav" aria-label="Navegación de cliente">
+          <button type="button" class="nav-item active" data-client-section="client-book">Reservar Cita en Línea</button>
+          <button type="button" class="nav-item" data-client-section="client-appointments">Mis Citas Agendadas</button>
+        </nav>
+      </div>
+
+      <div class="topbar-right">
+        <div class="biz-chip">
+          <span class="status-dot online"></span>
+          <span id="topbar-client-name">Cliente</span>
+        </div>
+        <button type="button" id="btn-client-logout" class="btn btn-outline btn-sm">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <main class="container-main">
+      <!-- SECCIÓN 3.1: FLUJO DE RESERVA PÚBLICA EN TIEMPO REAL -->
+      <section id="client-book" class="client-section">
+        <div class="page-header">
+          <div>
+            <h1>Reservar Cita en Línea</h1>
+            <p class="subtitle">Selecciona el negocio, elige un servicio y aparta tu horario disponible al instante.</p>
+          </div>
+        </div>
+
+        <!-- Paso 0: Selección de Negocio registrado -->
+        <div class="card mb-4">
+          <div class="business-selector-bar">
+            <div>
+              <label for="client-business-select" class="eyebrow-label">ESTABLECIMIENTO SELECCIONADO</label>
+              <select id="client-business-select" class="select-lg"></select>
+            </div>
+            <div id="selected-business-meta" class="business-meta-info"></div>
+          </div>
+        </div>
+
+        <!-- Contenido de reserva (si hay negocios disponibles) -->
+        <div id="booking-flow-container" class="booking-grid">
+          <!-- Columna 1: Selección de Servicio -->
+          <div class="card">
+            <h2>1. Selecciona un servicio</h2>
+            <div id="client-services-list" class="service-cards-stack"></div>
+          </div>
+
+          <!-- Columna 2: Fecha y Horarios Disponibles (con bloqueo en tiempo real RF-09) -->
+          <div class="card">
+            <h2>2. Fecha y hora</h2>
+            <div class="form-group">
+              <label for="booking-date-input">SELECCIONAR DÍA</label>
+              <input type="date" id="booking-date-input" />
+            </div>
+
+            <label class="eyebrow-label">HORARIOS DISPONIBLES PARA LA FECHA</label>
+            <div id="booking-slots-grid" class="slots-grid"></div>
+          </div>
+
+          <!-- Columna 3: Datos del Cliente y Revisión (RF-08) -->
+          <div class="card">
+            <h2>3. Datos y confirmación</h2>
+            <form id="client-booking-form">
+              <div class="form-group">
+                <label for="book-cli-name">NOMBRE COMPLETO *</label>
+                <input type="text" id="book-cli-name" required />
+              </div>
+              <div class="form-group">
+                <label for="book-cli-phone">TELÉFONO DE CONTACTO *</label>
+                <input type="tel" id="book-cli-phone" required />
+              </div>
+              <div class="form-group">
+                <label for="book-cli-notes">NOTAS O PREFERENCIAS (OPCIONAL)</label>
+                <input type="text" id="book-cli-notes" placeholder="Ej. Preferencia de atención..." />
+              </div>
+
+              <div class="review-box">
+                <h3>Revisa tu reserva</h3>
+                <div class="review-line"><span>Negocio:</span><strong id="rev-biz">—</strong></div>
+                <div class="review-line"><span>Servicio:</span><strong id="rev-service">Selecciona un servicio</strong></div>
+                <div class="review-line"><span>Fecha y Hora:</span><strong id="rev-datetime">Selecciona fecha y hora</strong></div>
+                <div class="review-line"><span>Total:</span><strong id="rev-price">$0</strong></div>
+              </div>
+
+              <p class="policy-note">
+                Política: Puedes cancelar o reprogramar sin cargos hasta 24 horas antes del inicio de tu cita.
+              </p>
+
+              <button type="submit" id="btn-confirm-booking" class="btn btn-dark btn-full" disabled>
+                Confirmar mi Reserva de Cita
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Estado vacío si no existe ningún negocio registrado aún -->
+        <div id="no-business-empty" class="card empty-state hidden">
+          <h2>Aún no hay negocios activos disponibles</h2>
+          <p>
+            Para probar el flujo completo, registra primero una cuenta en el rol <strong>Administrador (Negocio)</strong>, configura sus servicios y horarios, y luego ingresa como <strong>Cliente</strong>.
+          </p>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3.2: MIS CITAS Y CANCELACIÓN -->
+      <section id="client-appointments" class="client-section hidden">
+        <div class="page-header">
+          <div>
+            <h1>Mis Citas Agendadas</h1>
+            <p class="subtitle">Consulta tus comprobantes de reserva o cancela una cita para liberar el horario.</p>
+          </div>
+        </div>
+
+        <div id="client-appointments-list" class="client-cards-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       MODALES INTERACTIVOS (SERVICIOS, DETALLE/REPROGRAMACIÓN, COMPROBANTE, CLIENTE)
+       ===================================================================== -->
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <!-- Modal: Crear / Editar Servicio (RF-04) -->
+    <div id="modal-service" class="modal-card hidden" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 id="modal-service-title">Crear Nuevo Servicio</h2>
+        <button type="button" class="btn-close-modal">&times;</button>
+      </div>
+      <form id="service-form">
+        <input type="hidden" id="srv-id" />
+        <div class="form-group">
+          <label for="srv-name">NOMBRE DEL SERVICIO *</label>
+          <input type="text" id="srv-name" placeholder="Ej. Limpieza Facial Profunda" required />
+        </div>
+        <div class="form-group">
+          <label for="srv-desc">DESCRIPCIÓN DETALLADA *</label>
+          <textarea id="srv-desc" rows="2" placeholder="Describe en qué consiste el servicio..." required></textarea>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="srv-duration">DURACIÓN (MINUTOS) *</label>
+            <input type="number" id="srv-duration" min="15" step="15" value="60" required />
+          </div>
+          <div class="form-group">
+            <label for="srv-price">PRECIO ($ COP) *</label>
+            <input type="number" id="srv-price" min="0" step="500" value="35000" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="srv-status">ESTADO INICIAL</label>
+          <select id="srv-status">
+            <option value="Activo">Activo (Reservable)</option>
+            <option value="Pausado">Pausado (Oculto)</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-dark">Guardar Servicio</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal: Registrar Nueva Cita Administrativa Manual -->
+    <div id="modal-manual-booking" class="modal-card hidden" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>Registrar Nueva Cita Administrativa</h2>
+        <button type="button" class="btn-close-modal">&times;</button>
+      </div>
+      <form id="manual-booking-form">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="man-cli-name">NOMBRE DEL CLIENTE *</label>
+            <input type="text" id="man-cli-name" placeholder="Ej. Mateo Torres" required />
+          </div>
+          <div class="form-group">
+            <label for="man-cli-phone">TELÉFONO *</label>
+            <input type="tel" id="man-cli-phone" placeholder="+57 300 123 4567" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="man-service">SERVICIO PROFESIONAL *</label>
+          <select id="man-service" required></select>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="man-date">FECHA DE LA CITA *</label>
+            <input type="date" id="man-date" required />
+          </div>
+          <div class="form-group">
+            <label for="man-time">HORARIO DISPONIBLE *</label>
+            <select id="man-time" required></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="man-notes">NOTAS ADICIONALES</label>
+          <input type="text" id="man-notes" placeholder="Observaciones del cliente..." />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn btn-accent">Agendar Cita en Calendario</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal: Detalle, Confirmación, Reprogramación y Cancelación de Cita (RF-06) -->
+    <div id="modal-appointment-detail" class="modal-card hidden" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 id="det-apt-id">Detalle de la Cita</h2>
+        <button type="button" class="btn-close-modal">&times;</button>
+      </div>
+      <div id="det-apt-body" class="detail-body"></div>
+
+      <!-- Bloque de reprogramación -->
+      <div id="reschedule-panel" class="reschedule-box hidden">
+        <h3>Reprogramar Horario de Cita</h3>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="resc-date">NUEVA FECHA</label>
+            <input type="date" id="resc-date" />
+          </div>
+          <div class="form-group">
+            <label for="resc-time">NUEVO HORARIO DISPONIBLE</label>
+            <select id="resc-time"></select>
+          </div>
+        </div>
+        <button type="button" id="btn-save-reschedule" class="btn btn-dark btn-sm">Guardar Nueva Fecha</button>
+      </div>
+
+      <div id="det-apt-actions" class="modal-footer wrap"></div>
+    </div>
+
+    <!-- Modal: Comprobante Visual de Reserva (RF-10) -->
+    <div id="modal-receipt" class="modal-card receipt-card hidden" role="dialog" aria-modal="true">
+      <div class="receipt-check">&#10003;</div>
+      <h2>¡Reserva Confirmada!</h2>
+      <p class="subtitle">Tu cita ha sido agendada con éxito en el sistema.</p>
+      <div id="receipt-details" class="receipt-box"></div>
+      <p class="policy-note">
+        Puedes cancelar o reprogramar sin costo debido a que quedan más de 24 horas para la cita.
+      </p>
+      <button type="button" class="btn btn-dark btn-full btn-close-modal">Entendido</button>
+    </div>
+
+    <!-- Modal: Expediente / Ficha Técnica de Cliente -->
+    <div id="modal-client-record" class="modal-card hidden" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2 id="cli-rec-title">Ficha Técnica de Cliente</h2>
+        <button type="button" class="btn-close-modal">&times;</button>
+      </div>
+      <form id="client-record-form">
+        <input type="hidden" id="rec-cli-id" />
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="rec-cli-name">NOMBRE COMPLETO *</label>
+            <input type="text" id="rec-cli-name" required />
+          </div>
+          <div class="form-group">
+            <label for="rec-cli-phone">TELÉFONO DE CONTACTO *</label>
+            <input type="tel" id="rec-cli-phone" required />
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="rec-cli-email">CORREO ELECTRÓNICO</label>
+            <input type="email" id="rec-cli-email" />
+          </div>
+          <div class="form-group">
+            <label for="rec-cli-channel">PREFERENCIA DE CANAL</label>
+            <select id="rec-cli-channel">
+              <option value="WhatsApp Automatizado">WhatsApp Automatizado</option>
+              <option value="Llamada Telefónica Directa">Llamada Telefónica Directa</option>
+              <option value="Correo Electrónico">Correo Electrónico</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="rec-cli-notes">FICHA TÉCNICA / NOTAS DE ATENCIÓN</label>
+          <textarea id="rec-cli-notes" rows="3" placeholder="Alergias, preferencias de servicio, observaciones..."></textarea>
+        </div>
+        <div id="cli-rec-stats" class="review-box"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline btn-close-modal">Cerrar</button>
+          <button type="submit" class="btn btn-dark">Guardar Ficha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
